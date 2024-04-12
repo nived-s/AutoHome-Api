@@ -371,7 +371,7 @@ def update_mode():
                 # create and call function to update devices
                 pass        # delete pass after GPIO code done
             
-            return jsonify({"succes": "Mode updated"}), 201
+            return jsonify({"succes": "Mode updated"}), 200
         else:
             return jsonify({"error": "Failed to update mode"}), 404
 
