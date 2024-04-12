@@ -330,9 +330,47 @@ def update_mode():
     post_request_body = request.get_json()
     new_mode = post_request_body.get('mode')
     
+    # List of modes
+    modes = [
+        'Away',
+        'Ambient',
+        'Guest',
+        'Children',
+        'Emergency',
+        'Night',
+        'Saver',
+        'Vacay',
+    ]
+    
     try:
-        if new_mode:
+        if new_mode in modes:
             selected_mode = new_mode
+            
+            if new_mode == "Away":
+                # create and call function to update devices
+                pass        # delete pass after GPIO code done
+            elif new_mode == "Ambient":
+                # create and call function to update devices
+                pass        # delete pass after GPIO code done
+            elif new_mode == "Guest":
+                # create and call function to update devices
+                pass        # delete pass after GPIO code done
+            elif new_mode == "Children":
+                # create and call function to update devices
+                pass        # delete pass after GPIO code done
+            elif new_mode == "Emergency":
+                # create and call function to update devices
+                pass        # delete pass after GPIO code done
+            elif new_mode == "Night":
+                # create and call function to update devices
+                pass        # delete pass after GPIO code done
+            elif new_mode == "Saver":
+                # create and call function to update devices
+                pass        # delete pass after GPIO code done
+            elif new_mode == "Vacay":
+                # create and call function to update devices
+                pass        # delete pass after GPIO code done
+            
             return jsonify({"succes": "Mode updated"}), 201
         else:
             return jsonify({"error": "Failed to update mode"}), 404
