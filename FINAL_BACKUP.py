@@ -6,22 +6,52 @@ app = Flask(__name__)
 app.secret_key = 'king'
 
 #-------------------------------INITIALIZE ALL DEVICES WITH GPIO-----------------------------------------
+'''
+Each room have separate function to initialize devices in it
+'''
+
+# setup GPIO pins
+light_pin_livingRoom = 18
+light_pin_kitchen = 19
+light_pin_masterBedroom = 20
+light_pin_garden = 22
+
+servo_gate = 11
+servo_window = 13
+servo_door = 15
+
+smoke_detector = 12
+gas_detector = 12
+ir_sensor = 12
+
+dht_sensor = 15
+
+fan_pin = 14
 
 # Initialize GPIO
 def init_GPIO_board():
     # define all gpio pins
-    test_light = 16
-    test_fan = 15
+    test_light = 28
     
     # Set up GPIO
     GPIO.setmode(GPIO.BOARD)
-    GPIO.setwarnings(False)
-
     GPIO.setup(test_light, GPIO.OUT)
-    GPIO.setup(test_fan, GPIO.OUT)
+
+# def init_living_room():
+#     print('Living room, 201')
+    
+# def init_kitchen():
+#     print('Kitchen, 201')
+    
+# def init_master_bedroom():
+#     print('Master bedroom, 201')
+    
+# def init_childrens_room():
+#     print('Childrens room, 201')
 
 
 #------------------------------- -----------------------------------------
+
 
 #-------------------------------ALL ROOMS GET {{ ROOMS PAGE }}-----------------------------------------
 
@@ -101,7 +131,7 @@ all_rooms_detailed = [
                 "name": "Light",
                 "icon": "mdi-ceiling-light",
                 "status": "false",
-                "gpio": 16,
+                "gpio": 28,
             },
         ]
     },
@@ -138,7 +168,7 @@ all_rooms_detailed = [
                 "name": "Fan",
                 "icon": "mdi-fan",
                 "status": "false",
-                "gpio": 15,
+                "gpio": 32,
             },
             {
                 "name": "AC",
@@ -205,7 +235,7 @@ def get_room_devices():
     except:
         return jsonify({"error": "Room not found"}), 404
     
-# -----------------------------------------------------------------------
+
 
 # -- update LED Device
 
@@ -223,27 +253,8 @@ def off_LED(device_gpio):
     GPIO.output(device_gpio, GPIO.LOW)
 
     print("Status is false of ", device_gpio)
-
-
-# -- update FAN Device
-
-# ON FAN
-def on_FAN(device_gpio):
-    # set light to HIGH
-    GPIO.output(device_gpio, GPIO.HIGH)
-
-    print("Status is true of", device_gpio)
     
-
-# OFF FAN
-def off_FAN(device_gpio):
-    # set light to LOW
-    GPIO.output(device_gpio, GPIO.LOW)
-
-    print("Status is false of ", device_gpio)
-
-
-# -----------------------------------------------------------------------
+    
 
 
 # -- update a device
@@ -268,24 +279,29 @@ def update_device_status():
             if device_status.lower() == 'true':
                 on_LED(device_gpio) 
                 
-            elif device_status.lower() == 'false':
+            elif status.lower() == 'false':
                 off_LED(device_gpio)
             
             else:
                 return jsonify({'error': 'Invalid status value. Must be "true" or "false".'}), 400
         
         if to_update_device == "Fan":
-            if device_status.lower() == 'true':
-                on_FAN(device_gpio) 
-                
-            elif device_status.lower() == 'false':
-                off_FAN(device_gpio)
-            
-            else:
-                return jsonify({'error': 'Invalid status value. Must be "true" or "false".'}), 400
-        
+            # write code for motor rotation
+            pass
         
         ###############################################
+        ''' 
+        Updation of device happens according to room number;
+        '''
+        
+        # if room_number == 0:
+        #     print('living room')
+        # elif room_number == 1:
+        #     print('kitchen')
+        # elif room_number == 2:
+        #     print('master bedroom')
+        # elif room_number == 3:
+        #     print('children')
 
         return jsonify({"success": "device status updated"}), 200
 
@@ -423,12 +439,6 @@ def update_mode():
         return jsonify({"error": "Failed to update mode"}), 404
 
 #------------------------------- -----------------------------------------
-
-# clean up
-@app.route('/exit')
-def exit_clean_gpio():
-    GPIO.cleanup()
-
 
 if __name__ == '__main__':
     init_GPIO_board()
