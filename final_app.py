@@ -274,7 +274,7 @@ def update_device_status():
             else:
                 return jsonify({'error': 'Invalid status value. Must be "true" or "false".'}), 400
         
-        if to_update_device == "Fan":
+        if to_update_device in ['Fan']:
             if device_status.lower() == 'true':
                 on_FAN(device_gpio) 
                 
@@ -292,7 +292,7 @@ def update_device_status():
     except:
         return jsonify({"error": "Invalid request"}), 400
         
-    if isinstance(room_number, int) and update_device:
+    '''if isinstance(room_number, int) and update_device:
         room = next((r for r in all_rooms_detailed if r['room_name'] == str(room_number)), None)
         if room:
             device_index = update_device[0]
@@ -313,7 +313,7 @@ def update_device_status():
         else:
             return jsonify({"error": "Room not found"}), 404
     else:
-        return jsonify({"error": "Invalid request"}), 400
+        return jsonify({"error": "Invalid request"}), 400'''
     
 
 #------------------------------- -----------------------------------------
@@ -428,6 +428,7 @@ def update_mode():
 @app.route('/exit')
 def exit_clean_gpio():
     GPIO.cleanup()
+    return jsonify({"msg": "GPIO cleaned"}), 200
 
 
 if __name__ == '__main__':
