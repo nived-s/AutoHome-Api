@@ -12,7 +12,7 @@ import io
  #from mq2_sensor import MQ2Sensor
 import time
 import board
-import busio 
+import busio  
 import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 
@@ -100,7 +100,7 @@ def living_room():
         except FileNotFoundError:
             return None
         """
-        #---------------or----------------
+        #---------------or------- ---------
         image_url = f'https://res.cloudinary.com/dmfwpz555/image/upload/rooms/living_room.jpg'  # Replace with the actual URL
 
         try:

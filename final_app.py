@@ -121,50 +121,57 @@ Each room will have different response according to request body..
 
 all_rooms_detailed = [
     {
-        "room_name": "Hall",
-        "image_url": "https://res.cloudinary.com/dmfwpz555/image/upload/rooms/hall.jpg",
-        "devices": [
-            {
-                "name": "fan",
-                "icon": "fan_icon",
-                "status": "False"
-            }
-        ]
-    },
-    {
         "room_name": "Kitchen",
         "image_url": "https://res.cloudinary.com/dmfwpz555/image/upload/rooms/kitchen.jpg",
         "devices": [
             {
-                "name": "light",
-                "icon": "light_icon",
-                "status": "True"
+                "name": "Light",
+                "icon": "mdi-ceiling-light",
+                "status": "false",
+                "gpio": 28,
             },
-            {
-                "name": "fan",
-                "icon": "fan_icon",
-                "status": "True"
-            }
         ]
     },
+    {
+        "room_name": "Hall",
+        "image_url": "https://res.cloudinary.com/dmfwpz555/image/upload/rooms/hall.jpg",
+        "devices": [
+            {
+                "name": "AC",
+                "icon": "mdi-air-conditioner",
+                "status": "false",
+                "gpio": 29,
+            },
+            {
+                "name": "Light",
+                "icon": "mdi-ceiling-light",
+                "status": "false",
+                "gpio": 30,
+            },
+        ]
+    },
+    
     {
         "room_name": "Master Bedroom",
         "image_url": "https://res.cloudinary.com/dmfwpz555/image/upload/rooms/master_bedroom.jpg",
         "devices": [
             {
-                "name": "light",
-                "icon": "light_icon",
-                "status": "False"
+                "name": "Light",
+                "icon": "mdi-ceiling-light",
+                 "status": "false",
+                "gpio": 31,
             },
             {
-                "name": "fan",
-                "icon": "fan_icon",
-                "status": "True"
+                "name": "Fan",
+                "icon": "mdi-fan",
+                "status": "false",
+                "gpio": 32,
             },
             {
                 "name": "AC",
-                "icon": "ac_icon",
-                "status": "False"
+                "icon": "mdi-air-conditioner",
+                "status": "false",
+                "gpio": 33,
             }
         ]
     },
@@ -173,25 +180,34 @@ all_rooms_detailed = [
         "image_url": "https://res.cloudinary.com/dmfwpz555/image/upload/rooms/children_bedroom.jpg",
         "devices": [
             {
-                "name": "light",
-                "icon": "light_icon",
-                "status": "False"
+                "name": "Light",
+                "icon": "mdi-ceiling-light",
+                "status": "false",
+                "gpio": 34,
             },
             {
-                "name": "fan",
-                "icon": "fan_icon",
-                "status": "True"
+                "name": "Fan",
+                "icon": "mdi-fan",
+                "status": "false",
+                "gpio": 35,
+            },
+            {
+                "name": "AC",
+                "icon": "mdi-air-conditioner",
+                "status": "false",
+                "gpio": 36,
             }
         ]
     },
     {
-        "room_name": "Guest Bedroom",
+        "room_name": "Garage",
         "image_url": "https://res.cloudinary.com/dmfwpz555/image/upload/rooms/guest_room.jpg",
         "devices": [
             {
-                "name": "light",
-                "icon": "light_icon",
-                "status": "True"
+                "name": "Light",
+                "icon": "mdi-ceiling-light",
+                "status": "false",
+                "gpio": 37,
             }
         ]
     }
@@ -208,7 +224,7 @@ def get_room_devices():
                 "room": room_number,
                 "img": all_rooms_detailed[room_number]['image_url'],
                 "avail_devices": [
-                    [device["name"], device["icon"], device["status"]]
+                    [device["name"], device["icon"], device["status"], device["gpio"]]
                     for device in all_rooms_detailed[room_number]["devices"]
                 ]
             }
@@ -227,24 +243,41 @@ def update_device_status():
     try:
         device_index = update_device[0]
         device_status = update_device[1]
+        device_gpio = update_device[2]
         
         # updating all_rooms_details list
         all_rooms_detailed[room_number]['devices'][device_index]['status'] = device_status
+       
+        to_update_device = all_rooms_detailed[room_number]['devices'][device_index]['name']
         
-        ## TODO: update from GPIO code
+        ## update from GPIO code
+        if to_update_device in ['AC', 'Light']:
+            if device_status.lower() == 'true':
+                on_LED(device_gpio) 
+                
+            elif status.lower() == 'false':
+                off_LED(device_gpio)
+            
+            else:
+                return jsonify({'error': 'Invalid status value. Must be "true" or "false".'}), 400
+        
+        if to_update_device == "Fan":
+            # write code for motor rotation
+            pass
+        
         ###############################################
         ''' 
         Updation of device happens according to room number;
         '''
         
-        if room_number == 0:
-            print('living room')
-        elif room_number == 1:
-            print('kitchen')
-        elif room_number == 2:
-            print('master bedroom')
-        elif room_number == 3:
-            print('children')
+        # if room_number == 0:
+        #     print('living room')
+        # elif room_number == 1:
+        #     print('kitchen')
+        # elif room_number == 2:
+        #     print('master bedroom')
+        # elif room_number == 3:
+        #     print('children')
 
         return jsonify({"success": "device status updated"}), 200
 
@@ -273,6 +306,30 @@ def update_device_status():
             return jsonify({"error": "Room not found"}), 404
     else:
         return jsonify({"error": "Invalid request"}), 400
+    
+
+# -- update LED Device
+# Set up GPIO
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(led_pin, GPIO.OUT)
+
+
+# ON LED
+def on_LED(device_gpio):
+    # set light to HIGH
+    GPIO.output(device_gpio, GPIO.HIGH)
+
+    print("Status is true of ", device_gpio)
+    
+
+# OFF LED
+def off_LED(device_gpio):
+    # set light to LOW
+    GPIO.output(device_gpio, GPIO.LOW)
+
+    print("Status is false of ", device_gpio)
+    
+    
 
 #------------------------------- -----------------------------------------
 
@@ -371,6 +428,7 @@ def update_mode():
                 # create and call function to update devices
                 pass        # delete pass after GPIO code done
             
+            print(new_mode)
             return jsonify({"succes": "Mode updated"}), 200
         else:
             return jsonify({"error": "Failed to update mode"}), 404
@@ -382,4 +440,4 @@ def update_mode():
 #------------------------------- -----------------------------------------
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')
