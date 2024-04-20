@@ -12,6 +12,7 @@ def init_GPIO_board():
     # define all gpio pins
     test_light = 16
     test_fan = 15
+    test_servo_pin = 7  # Use any GPIO pin
     
     # Set up GPIO
     GPIO.setmode(GPIO.BOARD)
@@ -19,6 +20,16 @@ def init_GPIO_board():
 
     GPIO.setup(test_light, GPIO.OUT)
     GPIO.setup(test_fan, GPIO.OUT)
+    GPIO.setup(test_servo_pin, GPIO.OUT)
+    
+    # Create PWM object
+    pwm = GPIO.PWM(test_servo_pin, 50)  # 50 Hz frequency
+
+    # Initial position of the servo motor
+    initial_position = 7.5
+    
+    # Start the servo motor at the initial position
+    pwm.start(initial_position)
 
 
 #------------------------------- -----------------------------------------
@@ -102,6 +113,12 @@ all_rooms_detailed = [
                 "icon": "mdi-ceiling-light",
                 "status": "false",
                 "gpio": 16,
+            },
+            {
+                "name": "Door",
+                "icon": "mdi-ceiling-light",
+                "status": "false",
+                "gpio": 7,
             },
         ]
     },
@@ -241,6 +258,34 @@ def off_FAN(device_gpio):
     GPIO.output(device_gpio, GPIO.LOW)
 
     print("Status is false of ", device_gpio)
+ 
+# -- update FAN Device
+
+# ON DOOR   
+def on_DOOR():
+    # Rotate the servo motor to 90 degrees
+    pwm.ChangeDutyCycle(12.5)
+    time.sleep(1)
+    
+    # Update the status of the device GPIO pin
+    GPIO.output(device_gpio, GPIO.HIGH)
+
+    print("Door opened")
+
+# OFF DOOR
+def off_DOOR():
+    # Rotate the servo motor to 0 degrees
+    pwm.ChangeDutyCycle(2.5)
+    time.sleep(1)
+
+    # Rotate the servo motor back to the initial position
+    pwm.ChangeDutyCycle(initial_position)
+    time.sleep(1)
+    
+    # Update the status of the device GPIO pin
+    GPIO.output(device_gpio, GPIO.LOW)
+
+    print("Door closed")
 
 
 # -----------------------------------------------------------------------
@@ -280,6 +325,16 @@ def update_device_status():
                 
             elif device_status.lower() == 'false':
                 off_FAN(device_gpio)
+            
+            else:
+                return jsonify({'error': 'Invalid status value. Must be "true" or "false".'}), 400
+        
+        if to_update_device in ['Door']:
+            if device_status.lower() == 'true':
+                on_DOOR(device_gpio)
+                
+            elif device_status.lower() == 'false':
+                off_DOOR(device_gpio)
             
             else:
                 return jsonify({'error': 'Invalid status value. Must be "true" or "false".'}), 400
@@ -428,6 +483,7 @@ def update_mode():
 @app.route('/exit')
 def exit_clean_gpio():
     GPIO.cleanup()
+    pwm.stop()
     return jsonify({"msg": "GPIO cleaned"}), 200
 
 
