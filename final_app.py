@@ -1,4 +1,5 @@
 from flask import Flask, request, make_response, jsonify
+import RPi.GPIO as GPIO
 
 app = Flask(__name__)
 
@@ -29,10 +30,12 @@ fan_pin = 14
 
 # Initialize GPIO
 def init_GPIO_board():
-    """
+    # define all gpio pins
+    test_light = 28
+    
+    # Set up GPIO
     GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(light_pin, GPIO.OUT)
-    """
+    GPIO.setup(test_light, GPIO.OUT)
 
 # def init_living_room():
 #     print('Living room, 201')
@@ -233,6 +236,27 @@ def get_room_devices():
         return jsonify({"error": "Room not found"}), 404
     
 
+
+# -- update LED Device
+
+# ON LED
+def on_LED(device_gpio):
+    # set light to HIGH
+    GPIO.output(device_gpio, GPIO.HIGH)
+
+    print("Status is true of ", device_gpio)
+    
+
+# OFF LED
+def off_LED(device_gpio):
+    # set light to LOW
+    GPIO.output(device_gpio, GPIO.LOW)
+
+    print("Status is false of ", device_gpio)
+    
+    
+
+
 # -- update a device
 @app.route('/update-device', methods=['POST'])
 def update_device_status():
@@ -306,29 +330,6 @@ def update_device_status():
             return jsonify({"error": "Room not found"}), 404
     else:
         return jsonify({"error": "Invalid request"}), 400
-    
-
-# -- update LED Device
-# Set up GPIO
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(led_pin, GPIO.OUT)
-
-
-# ON LED
-def on_LED(device_gpio):
-    # set light to HIGH
-    GPIO.output(device_gpio, GPIO.HIGH)
-
-    print("Status is true of ", device_gpio)
-    
-
-# OFF LED
-def off_LED(device_gpio):
-    # set light to LOW
-    GPIO.output(device_gpio, GPIO.LOW)
-
-    print("Status is false of ", device_gpio)
-    
     
 
 #------------------------------- -----------------------------------------
@@ -440,4 +441,5 @@ def update_mode():
 #------------------------------- -----------------------------------------
 
 if __name__ == '__main__':
+    init_GPIO_board()
     app.run(debug=True, host='0.0.0.0')
