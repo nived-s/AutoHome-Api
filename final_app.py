@@ -10,26 +10,28 @@ app.secret_key = 'king'
 # Initialize GPIO
 def init_GPIO_board():
     # define all gpio pins
-    test_light = 16
-    test_fan = 15
-    test_servo_pin = 7  # Use any GPIO pin
+    # test_light = 16
+    # test_fan = 15
+    # test_servo_pin = 7  # Use any GPIO pin
     
-    # Set up GPIO
-    GPIO.setmode(GPIO.BOARD)
-    GPIO.setwarnings(False)
+    # # Set up GPIO
+    # GPIO.setmode(GPIO.BOARD)
+    # GPIO.setwarnings(False)
 
-    GPIO.setup(test_light, GPIO.OUT)
-    GPIO.setup(test_fan, GPIO.OUT)
-    GPIO.setup(test_servo_pin, GPIO.OUT)
-    
-    # Create PWM object
-    pwm = GPIO.PWM(test_servo_pin, 50)  # 50 Hz frequency
+    # GPIO.setup(test_light, GPIO.OUT)
+    # GPIO.setup(test_fan, GPIO.OUT)
 
-    # Initial position of the servo motor
-    initial_position = 7.5
-    
-    # Start the servo motor at the initial position
-    pwm.start(initial_position)
+    # initialize GPIO pins
+    GPIO.setmode(GPIO.BCM)
+    pwm1 = GPIO.PWM(17, 50)
+    pwm2 = GPIO.PWM(27, 50)
+    pwm3 = GPIO.PWM(22, 50)
+
+    # start PWM with a 0% duty cycle
+    pwm1.start(0)
+    pwm2.start(0)
+    pwm3.start(0)
+
 
 
 #------------------------------- -----------------------------------------
@@ -118,7 +120,7 @@ all_rooms_detailed = [
                 "name": "Door",
                 "icon": "mdi-ceiling-light",
                 "status": "false",
-                "gpio": 7,
+                "gpio": 17,
             },
         ]
     },
@@ -259,34 +261,23 @@ def off_FAN(device_gpio):
 
     print("Status is false of ", device_gpio)
  
-# -- update FAN Device
+# -- update DOOR Device
 
 # ON DOOR   
-def on_DOOR():
-    # Rotate the servo motor to 90 degrees
-    pwm.ChangeDutyCycle(12.5)
-    time.sleep(1)
-    
-    # Update the status of the device GPIO pin
-    GPIO.output(device_gpio, GPIO.HIGH)
-
-    print("Door opened")
+def on_DOOR(device_gpio):
+    # rotate servo from 0 to 90 degrees
+    for angle in range(0, 91, 5):
+        duty_cycle = angle / 18 + 2
+        pwm1.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.05)
 
 # OFF DOOR
-def off_DOOR():
-    # Rotate the servo motor to 0 degrees
-    pwm.ChangeDutyCycle(2.5)
-    time.sleep(1)
-
-    # Rotate the servo motor back to the initial position
-    pwm.ChangeDutyCycle(initial_position)
-    time.sleep(1)
-    
-    # Update the status of the device GPIO pin
-    GPIO.output(device_gpio, GPIO.LOW)
-
-    print("Door closed")
-
+def off_DOOR(device_gpio):
+    # rotate servo from 90 to 0 degrees
+    for angle in range(90, -1, -5):
+        duty_cycle = angle / 18 + 2
+        pwm1.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.05)
 
 # -----------------------------------------------------------------------
 
