@@ -1,4 +1,5 @@
 from flask import Flask, request, make_response, jsonify
+
 import RPi.GPIO as GPIO
 
 app = Flask(__name__)
@@ -10,18 +11,31 @@ app.secret_key = 'king'
 # Initialize GPIO
 def init_GPIO_board():
     # define all gpio pins
-    # test_light = 16
-    # test_fan = 15
-    # test_servo_pin = 7  # Use any GPIO pin
+    living_room_light = 16
+    living_room_ac = 20
     
-    # # Set up GPIO
-    # GPIO.setmode(GPIO.BOARD)
-    # GPIO.setwarnings(False)
+    master_bedroom_fan = 26
+    master_bedroom_light = 18
+    
+    child_bedroom_light = 25
+   
+    
+    
+    
+    # Set up GPIO
+    GPIO.setmode(GPIO.BOARD)
+    GPIO.setwarnings(False)
 
-    # GPIO.setup(test_light, GPIO.OUT)
-    # GPIO.setup(test_fan, GPIO.OUT)
+    GPIO.setup(living_room_light, GPIO.OUT)
+    GPIO.setup(living_room_ac, GPIO.OUT)
+    GPIO.setup(master_bedroom_light, GPIO.OUT)
+    GPIO.setup(master_bedroom_fan, GPIO.OUT)
+    GPIO.setup(child_bedroom_light, GPIO.OUT)
 
     # initialize GPIO pins
+    
+    
+    '''
     GPIO.setmode(GPIO.BCM)
     pwm1 = GPIO.PWM(17, 50)
     pwm2 = GPIO.PWM(27, 50)
@@ -31,7 +45,7 @@ def init_GPIO_board():
     pwm1.start(0)
     pwm2.start(0)
     pwm3.start(0)
-
+    '''
 
 
 #------------------------------- -----------------------------------------
@@ -138,7 +152,7 @@ all_rooms_detailed = [
                 "name": "Light",
                 "icon": "mdi-ceiling-light",
                 "status": "false",
-                "gpio": 30,
+                "gpio": 20,
             },
         ]
     },
@@ -151,7 +165,7 @@ all_rooms_detailed = [
                 "name": "Light",
                 "icon": "mdi-ceiling-light",
                  "status": "false",
-                "gpio": 31,
+                "gpio": 18,
             },
             {
                 "name": "Fan",
@@ -163,7 +177,7 @@ all_rooms_detailed = [
                 "name": "AC",
                 "icon": "mdi-air-conditioner",
                 "status": "false",
-                "gpio": 33,
+                "gpio": 26,
             }
         ]
     },
@@ -175,7 +189,7 @@ all_rooms_detailed = [
                 "name": "Light",
                 "icon": "mdi-ceiling-light",
                 "status": "false",
-                "gpio": 34,
+                "gpio": 25,
             },
             {
                 "name": "Fan",
@@ -288,6 +302,8 @@ def update_device_status():
     post_request_body = request.get_json()
     room_number = post_request_body.get('room')
     update_device = post_request_body.get('update_device')
+    
+    print(room_number, update_device)
         
     try:
         device_index = update_device[0]
@@ -363,6 +379,8 @@ def update_device_status():
     
 
 #------------------------------- -----------------------------------------
+
+
 
 #-------------------------------Modes and desciption {{ MODES PAGE }}-----------------------------------------
 
