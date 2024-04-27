@@ -2,6 +2,7 @@ from flask import Flask, request, make_response, jsonify
 from piservo import Servo
 import RPi.GPIO as GPIO
 
+import adafruit_dht
 import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 import board
@@ -35,6 +36,8 @@ def init_GPIO_board():
     
     garage_light = 52
     garage_door = 53
+    
+    DHT11_PIN = 25
     
      
     
@@ -423,7 +426,12 @@ def detect_smoke():
 
     # Activate buzzer and red LED if smoke concentration is above 200 ppm
     if mq7_ppm > 200:
-        send_notification()
+        sendOrNot = send_alert_to_home()
+        
+        if sendOrNot:
+            print("successfully send notification")
+        else:
+            print("Failed to send notification")
 
     # Define severity levels based on ppm ranges
     if mq7_ppm < 200:
@@ -452,6 +460,26 @@ def send_notification():
         return jsonify({"status": "Notification sent"}), 200
     else:
         return jsonify({"error": "Failed to send notification"}), 500
+    
+    
+def send_alert_to_home():
+    try:
+        data = {
+            "to": "eSWeRvWhTN2fXtSYmoRG52:APA91bFeF29mb13Z88RzjPDJpZEddQ1FXRwVVok3Dr3-id_itbEyAoanEjjZkUvle80B1l3_UJeKt5UWWCUU3_BYGi8mFHi-BR7G1VfRzfWM3YI7BCxQ3lLmOOXxwcFy_SLMonvXbTCK",
+            "notification": {
+                "title": "Smoke Alert",
+                "body": "Smoke detected!"
+            }
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "key=AAAAwv7aN9s:APA91bHn5Yj8ZqE7MDRjCl1LCpTXKHWrTKTS10hy-AszzbInvCyg0NzA7HIokBtat5sTDwCtSF2HHyIaX2cR1F7RS7KY5p1ZTuz8Jb1iYYJSCSZlGiag3IP8MKKoDmu1DiDAgDqvOkyt"
+        }
+        requests.post("https://fcm.googleapis.com/fcm/send",
+                    json=data, headers=headers)
+        return True
+    except:
+        return False
 
     #######################------------------in the main function----------------------------------
 # def main():
@@ -462,6 +490,24 @@ def send_notification():
         
         
 #------------------------------- -----------------------------------------        
+
+
+#---------------------------smoke detection-------------------------------
+
+
+@app.route('/sensor_data', methods=['GET'])
+def read_dht11_data():
+    try:
+        humidity, temperature = Adafruit_DHT.read_retry(Adafruit_DHT.DHT11, DHT11_PIN)
+        if humidity is not None and temperature is not None:
+            result = {'temperature': temperature, 'humidity': humidity}
+        else:
+            result = {'temperature': None, 'humidity': None}
+    except Exception as e:
+        # Handle sensor reading errors (optional)
+        result = {'error': str(e)}
+
+    return jsonify(result)
 
 
 #-------------------------------Modes and desciption {{ MODES PAGE }}-----------------------------------------
