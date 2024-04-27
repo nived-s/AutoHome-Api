@@ -1,12 +1,14 @@
-from flask import Flask, request, make_response, jsonify
-from piservo import Servo
-import RPi.GPIO as GPIO
-
-import adafruit_ads1x15.ads1115 as ADS
-from adafruit_ads1x15.analog_in import AnalogIn
+import requests
+import time
+from mq2_sensor import MQ2Sensor  # Assuming you have a library for interfacing with the MQ2 sensor
+from flask import Flask, jsonify, request
+from smokedetfeatures.powermanage import init_power_management
 import board
 import busio
-from mq2_sensor import MQ2Sensor 
+import adafruit_ads1x15.ads1115 as ADS
+from adafruit_ads1x15.analog_in import AnalogIn
+from flask import Flask, request, make_response, jsonify
+import RPi.GPIO as GPIO
 
 app = Flask(__name__)
 
@@ -14,48 +16,31 @@ app.secret_key = 'king'
 
 #-------------------------------INITIALIZE ALL DEVICES WITH GPIO-----------------------------------------
 
-# servo motor
-garage_servo = Servo(12)
-hall_servo = Servo(13)
-
 # Initialize GPIO
 def init_GPIO_board():
     # define all gpio pins
-    living_room_light = 16
-    living_room_ac = 20
-    living_room_door = 50
+    # test_light = 16
+    # test_fan = 15
+    # test_servo_pin = 7  # Use any GPIO pin
     
-    master_bedroom_light = 18
-    master_bedroom_fan = 26
-    
-    child_bedroom_light = 25
-    child_bedroom_ac = 25
-    
-    kitchen_light = 51
-    
-    garage_light = 52
-    garage_door = 53
-    
-     
-    
-    # Set up GPIO
-    GPIO.setmode(GPIO.BOARD)
-    GPIO.setwarnings(False)
+    # # Set up GPIO
+    # GPIO.setmode(GPIO.BOARD)
+    # GPIO.setwarnings(False)
 
-    GPIO.setup(living_room_light, GPIO.OUT)
-    GPIO.setup(living_room_ac, GPIO.OUT)
-    GPIO.setup(living_room_door, GPIO.OUT)
-    
-    GPIO.setup(master_bedroom_light, GPIO.OUT)
-    GPIO.setup(master_bedroom_fan, GPIO.OUT)
-    
-    GPIO.setup(child_bedroom_light, GPIO.OUT)
-    GPIO.setup(child_bedroom_ac, GPIO.OUT)
-    
-    GPIO.setup(kitchen_light, GPIO.OUT)
-    
-    GPIO.setup(garage_light, GPIO.OUT)
-    GPIO.setup(garage_door, GPIO.OUT)
+    # GPIO.setup(test_light, GPIO.OUT)
+    # GPIO.setup(test_fan, GPIO.OUT)
+
+    # initialize GPIO pins
+    GPIO.setmode(GPIO.BCM)
+    pwm1 = GPIO.PWM(17, 50)
+    pwm2 = GPIO.PWM(27, 50)
+    pwm3 = GPIO.PWM(22, 50)
+
+    # start PWM with a 0% duty cycle
+    pwm1.start(0)
+    pwm2.start(0)
+    pwm3.start(0)
+
 
 
 #------------------------------- -----------------------------------------
@@ -140,6 +125,12 @@ all_rooms_detailed = [
                 "status": "false",
                 "gpio": 16,
             },
+            {
+                "name": "Door",
+                "icon": "mdi-ceiling-light",
+                "status": "false",
+                "gpio": 17,
+            },
         ]
     },
     {
@@ -156,13 +147,7 @@ all_rooms_detailed = [
                 "name": "Light",
                 "icon": "mdi-ceiling-light",
                 "status": "false",
-                "gpio": 20,
-            },
-            {
-                "name": "Door",
-                "icon": "mdi-glassdoor",
-                "status": "false",
-                "gpio": 13,
+                "gpio": 30,
             },
         ]
     },
@@ -175,7 +160,7 @@ all_rooms_detailed = [
                 "name": "Light",
                 "icon": "mdi-ceiling-light",
                  "status": "false",
-                "gpio": 18,
+                "gpio": 31,
             },
             {
                 "name": "Fan",
@@ -183,6 +168,12 @@ all_rooms_detailed = [
                 "status": "false",
                 "gpio": 15,
             },
+            {
+                "name": "AC",
+                "icon": "mdi-air-conditioner",
+                "status": "false",
+                "gpio": 33,
+            }
         ]
     },
     {
@@ -193,7 +184,13 @@ all_rooms_detailed = [
                 "name": "Light",
                 "icon": "mdi-ceiling-light",
                 "status": "false",
-                "gpio": 25,
+                "gpio": 34,
+            },
+            {
+                "name": "Fan",
+                "icon": "mdi-fan",
+                "status": "false",
+                "gpio": 35,
             },
             {
                 "name": "AC",
@@ -212,13 +209,7 @@ all_rooms_detailed = [
                 "icon": "mdi-ceiling-light",
                 "status": "false",
                 "gpio": 37,
-            },
-            {
-                "name": "Door",
-                "icon": "mdi-glassdoor",
-                "status": "false",
-                "gpio": 12,
-            },
+            }
         ]
     }
 ]
@@ -283,39 +274,22 @@ def off_FAN(device_gpio):
 
 # ON DOOR   
 def on_DOOR(device_gpio):
-    """Rotate servo from 0 to 90 degree."""
-    # garage
-    if device_gpio == 12:
-        garage_servo.write(0)
-        time.sleep(1)
-        garage_servo.write(90)
-        time.sleep(1)
-    
-    # living room
-    if device_gpio == 13:
-        hall_servo.write(0)
-        time.sleep(1)
-        hall_servo.write(90)
-        time.sleep(1)
+    # rotate servo from 0 to 90 degrees
+    for angle in range(0, 91, 5):
+        duty_cycle = angle / 18 + 2
+        pwm1.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.05)
 
 # OFF DOOR
 def off_DOOR(device_gpio):
-    """Rotate servo from 90 to 0 degree."""
-    # garage
-    if device_gpio == 12:
-        garage_servo.write(90)
-        time.sleep(1)
-        garage_servo.write(0)
-        time.sleep(1)
-        
-    # living room
-    if device_gpio == 13:
-        hall_servo.write(90)
-        time.sleep(1)
-        hall_servo.write(0)
-        time.sleep(1)
+    # rotate servo from 90 to 0 degrees
+    for angle in range(90, -1, -5):
+        duty_cycle = angle / 18 + 2
+        pwm1.ChangeDutyCycle(duty_cycle)
+        time.sleep(0.05)
 
 # -----------------------------------------------------------------------
+
 
 # -- update a device
 @app.route('/update-device', methods=['POST'])
@@ -323,8 +297,6 @@ def update_device_status():
     post_request_body = request.get_json()
     room_number = post_request_body.get('room')
     update_device = post_request_body.get('update_device')
-    
-    print(room_number, update_device)
         
     try:
         device_index = update_device[0]
@@ -374,10 +346,32 @@ def update_device_status():
 
     except:
         return jsonify({"error": "Invalid request"}), 400
+        
+    '''if isinstance(room_number, int) and update_device:
+        room = next((r for r in all_rooms_detailed if r['room_name'] == str(room_number)), None)
+        if room:
+            device_index = update_device[0]
+            device_status = update_device[1]
+            if 0 <= device_index < len(room['devices']):
+                room['devices'][device_index]['status'] = device_status
+                response_body = {
+                    "room": room_number,
+                    "img": room["image_url"],
+                    "avail_devices": [
+                        [device["name"], device["icon"], device["status"]]
+                        for device in room["devices"]
+                    ]
+                }
+                return jsonify(response_body), 200
+            else:
+                return jsonify({"error": "Invalid device index"}), 400
+        else:
+            return jsonify({"error": "Room not found"}), 404
+    else:
+        return jsonify({"error": "Invalid request"}), 400'''
     
-    
-#------------------------------- -----------------------------------------
 
+#------------------------------- -----------------------------------------
 #---------------------------smoke detection-------------------------------
 # Create the I2C bus
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -454,15 +448,11 @@ def send_notification():
         return jsonify({"error": "Failed to send notification"}), 500
 
     #######################------------------in the main function----------------------------------
-# def main():
-#     while True:
-#         # Detect smoke and determine severity
-#         mq7_ppm, severity = detect_smoke()
-#         time.sleep(300)  # Check for smoke every 5 minutes
-        
-        
-#------------------------------- -----------------------------------------        
-
+def main():
+    while True:
+        # Detect smoke and determine severity
+        mq7_ppm, severity = detect_smoke()
+        time.sleep(300)  # Check for smoke every 5 minutes
 
 #-------------------------------Modes and desciption {{ MODES PAGE }}-----------------------------------------
 
@@ -574,15 +564,10 @@ def update_mode():
 @app.route('/exit')
 def exit_clean_gpio():
     GPIO.cleanup()
+    pwm.stop()
     return jsonify({"msg": "GPIO cleaned"}), 200
 
 
 if __name__ == '__main__':
     init_GPIO_board()
     app.run(debug=True, host='0.0.0.0')
-    
-    while True:
-        # Detect smoke and determine severity
-        mq7_ppm, severity = detect_smoke()
-        time.sleep(300)  # Check for smoke every 5 minutes
-    
