@@ -7,7 +7,11 @@ import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 import board
 import busio
-from mq2_sensor import MQ2Sensor 
+
+import sqlite3
+import hashlib
+import re
+
 
 app = Flask(__name__)
 
@@ -42,7 +46,7 @@ def init_GPIO_board():
      
     
     # Set up GPIO
-    GPIO.setmode(GPIO.BOARD)
+    GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
 
     GPIO.setup(living_room_light, GPIO.OUT)
@@ -582,6 +586,20 @@ def update_mode():
             
             if new_mode == "Away":
                 # create and call function to update devices
+            
+                """
+                close door and window
+                close all appliances inside(light, fan, ac)
+                """
+                
+                try:
+                    off_DOOR(12)
+                    off_DOOR(13)
+                
+                except:
+                    print('failed to update')
+                    return jsonify({"error": "Failed to update away mode"}), 404
+                
                 pass        # delete pass after GPIO code done
             elif new_mode == "Ambient":
                 # create and call function to update devices
@@ -597,13 +615,32 @@ def update_mode():
                 pass        # delete pass after GPIO code done
             elif new_mode == "Night":
                 # create and call function to update devices
+                
+                """
+                close door and window
+                close all appliances inside(light, fan, ac)
+                open outside light
+                """
+                
                 pass        # delete pass after GPIO code done
             elif new_mode == "Saver":
                 # create and call function to update devices
+                
+                """
+                close ac
+                """
+                
                 pass        # delete pass after GPIO code done
             elif new_mode == "Vacay":
                 # create and call function to update devices
+            
+                """
+                close door and window
+                close all appliances inside(light, fan, ac)
+                """
+            
                 pass        # delete pass after GPIO code done
+            
             
             print(new_mode)
             return jsonify({"succes": "Mode updated"}), 200
@@ -615,6 +652,66 @@ def update_mode():
         return jsonify({"error": "Failed to update mode"}), 404
 
 #------------------------------- -----------------------------------------
+
+
+#------------------------------- Login And Signup -----------------------------------------
+
+email_condition = "^[a-z]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$"
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    # Connect to the database
+    conn = sqlite3.connect('test.db')
+    cursor = conn.cursor()
+
+    # Check if the provided username and password match any user record in the database
+    cursor.execute("SELECT * FROM USERS WHERE USERNAME = ? AND PASSWORD = ?", (username, hashlib.sha512(password.encode()).hexdigest()))
+    user = cursor.fetchone()
+
+    conn.close()
+
+    if user:
+        return jsonify({'message': 'Login successful!'}), 200
+    else:
+        return jsonify({'message': 'Invalid username or password'}), 500
+
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    confirm_password = data.get('confirm_password')
+
+    if password != confirm_password:
+        return jsonify({'message': 'Password and confirm password do not match!'}), 500
+
+    if not re.search(email_condition, email):
+        return jsonify({'message': 'Invalid email format!'}), 500
+
+    # Connect to the database
+    conn = sqlite3.connect('test.db')
+    cursor = conn.cursor()
+
+    # Check if username already exists
+    cursor.execute("SELECT * FROM USERS WHERE USERNAME = ?", (username,))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({'message': 'Username already exists!'}), 500
+
+    # Insert new user data into the database
+    cursor.execute("INSERT INTO USERS (USERNAME, EMAIL, PASSWORD) VALUES (?, ?, ?)", (username, email, hashlib.sha512(password.encode()).hexdigest()))
+    conn.commit()
+    conn.close()
+
+    return jsonify({'message': 'User registered successfully!'}), 200
+
+#------------------------------- -----------------------------------------
+
 
 # clean up
 @app.route('/exit')
