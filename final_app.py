@@ -43,6 +43,8 @@ def init_GPIO_board():
     
     DHT11_PIN = 25
     
+    ir_sensor_pin = 23
+    
      
     
     # Set up GPIO
@@ -63,6 +65,8 @@ def init_GPIO_board():
     
     GPIO.setup(garage_light, GPIO.OUT)
     GPIO.setup(garage_door, GPIO.OUT)
+    
+    GPIO.setup(ir_sensor_pin, GPIO.OUT)
 
 
 #------------------------------- -----------------------------------------
@@ -513,6 +517,14 @@ def read_dht11_data():
 
     return jsonify(result)
 
+#---------------------------movement detection door open-------------------------------
+def check_for_movement():
+    if GPIO.input(23):
+        print('movement detected')
+        on_DOOR(12)
+        time.sleep(100)
+        off_DOOR(12)
+
 
 #-------------------------------Modes and desciption {{ MODES PAGE }}-----------------------------------------
 
@@ -726,6 +738,7 @@ if __name__ == '__main__':
     
     while True:
         # Detect smoke and determine severity
-        mq7_ppm, severity = detect_smoke()
-        time.sleep(300)  # Check for smoke every 5 minutes
+        # mq7_ppm, severity = detect_smoke()
+        # time.sleep(300)  # Check for smoke every 5 minutes
+        check_for_movement()
     
